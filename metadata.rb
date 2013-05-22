@@ -1,14 +1,14 @@
-name              "nginx"
-maintainer        "Opscode, Inc."
-maintainer_email  "cookbooks@opscode.com"
+name              "openresty"
+maintainer        "Richard Nicholas"
+maintainer_email  "richard.nicholas@capgemini.com"
 license           "Apache 2.0"
-description       "Installs and configures nginx"
-version           "1.6.0"
+description       "Installs and configures openresty"
+version           "0.0.1"
 
-recipe "nginx", "Installs nginx package and sets up configuration with Debian apache style with sites-enabled/sites-available"
-recipe "nginx::source", "Installs nginx from source and sets up configuration with Debian apache style with sites-enabled/sites-available"
+recipe "openresty", "Installs openresty package and sets up configuration with Debian apache style with sites-enabled/sites-available"
+recipe "openresty::source", "Installs openresty from source and sets up configuration with Debian apache style with sites-enabled/sites-available"
 
-%w{ ubuntu debian centos redhat amazon scientific oracle fedora }.each do |os|
+%w{ smartos ubuntu debian centos redhat amazon scientific oracle fedora }.each do |os|
   supports os
 end
 
@@ -22,10 +22,10 @@ depends 'ohai', '>= 1.1.4'
   suggests cb
 end
 
-attribute "nginx/dir",
-  :display_name => "Nginx Directory",
-  :description => "Location of nginx configuration files",
-  :default => "/etc/nginx"
+attribute "openresty/dir",
+  :display_name => "Openresty Directory",
+  :description => "Location of openresty configuration files",
+  :default => "/usr/local/openresty"
 
 attribute "nginx/log_dir",
   :display_name => "Nginx Log Directory",

@@ -23,12 +23,12 @@
 
 # This is for Chef 10 and earlier where attributes aren't loaded
 # deterministically (resolved in Chef 11).
-node.load_attribute_by_short_filename('source', 'nginx') if node.respond_to?(:load_attribute_by_short_filename)
+node.load_attribute_by_short_filename('source', 'openresty') if node.respond_to?(:load_attribute_by_short_filename)
 
-nginx_url = node['nginx']['source']['url'] ||
-  "http://nginx.org/download/nginx-#{node['nginx']['source']['version']}.tar.gz"
+openresty_url = node['openresty']['source']['url'] ||
+  "http://openresty.org/download/ngx_openresty-#{node['openresty']['source']['version']}.tar.gz"
 
-node.set['nginx']['binary']          = node['nginx']['source']['sbin_path']
+node.set['nginx']['binary']          = node['openresty']['source']['sbin_path']
 node.set['nginx']['daemon_disable']  = true
 
 user node['nginx']['user'] do
@@ -37,12 +37,12 @@ user node['nginx']['user'] do
   home "/var/www"
 end
 
-include_recipe "nginx::ohai_plugin"
-include_recipe "nginx::commons_dir"
-include_recipe "nginx::commons_script"
+include_recipe "openresty::ohai_plugin"
+include_recipe "openresty::commons_dir"
+include_recipe "openresty::commons_script"
 include_recipe "build-essential"
 
-src_filepath  = "#{Chef::Config['file_cache_path'] || '/tmp'}/nginx-#{node['nginx']['source']['version']}.tar.gz"
+src_filepath  = "#{Chef::Config['file_cache_path'] || '/tmp'}/ngx_openresty-#{node['openresty']['source']['version']}.tar.gz"
 packages = value_for_platform(
     ["centos","redhat","fedora","amazon","scientific"] => {'default' => ['pcre-devel', 'openssl-devel']},
     "gentoo" => {"default" => []},
@@ -53,18 +53,18 @@ packages.each do |devpkg|
   package devpkg
 end
 
-remote_file nginx_url do
-  source nginx_url
-  checksum node['nginx']['source']['checksum']
+remote_file openresty_url do
+  source openresty_url
+  checksum node['openresty']['source']['checksum']
   path src_filepath
   backup false
 end
 
-node.run_state['nginx_force_recompile'] = false
-node.run_state['nginx_configure_flags'] =
-  node['nginx']['source']['default_configure_flags'] | node['nginx']['configure_flags']
+node.run_state['openresty_force_recompile'] = false
+node.run_state['openresty_configure_flags'] =
+  node['openresty']['source']['default_configure_flags'] | node['openresty']['configure_flags']
 
-include_recipe "nginx::commons_conf"
+include_recipe "openresty::commons_conf"
 
 cookbook_file "#{node['nginx']['dir']}/mime.types" do
   source "mime.types"
@@ -74,27 +74,27 @@ cookbook_file "#{node['nginx']['dir']}/mime.types" do
   notifies :reload, 'service[nginx]'
 end
 
-node['nginx']['source']['modules'].each do |ngx_module|
-  include_recipe "nginx::#{ngx_module}"
+node['openresty']['source']['modules'].each do |ngx_module|
+  include_recipe "openresty::#{ngx_module}"
 end
 
-configure_flags = node.run_state['nginx_configure_flags']
-nginx_force_recompile = node.run_state['nginx_force_recompile']
+configure_flags = node.run_state['openresty_configure_flags']
+openresty_force_recompile = node.run_state['openresty_force_recompile']
 
-bash "compile_nginx_source" do
+bash "compile_openresty_source" do
   cwd ::File.dirname(src_filepath)
   code <<-EOH
     tar zxf #{::File.basename(src_filepath)} -C #{::File.dirname(src_filepath)} &&
-    cd nginx-#{node['nginx']['source']['version']} &&
-    ./configure #{node.run_state['nginx_configure_flags'].join(" ")} &&
+    cd ngx_openresty-#{node['openresty']['source']['version']} &&
+    ./configure #{node.run_state['openresty_configure_flags'].join(" ")} &&
     make && make install
   EOH
 
   not_if do
-    nginx_force_recompile == false &&
-      node.automatic_attrs['nginx'] &&
-      node.automatic_attrs['nginx']['version'] == node['nginx']['source']['version'] &&
-      node.automatic_attrs['nginx']['configure_arguments'].sort == configure_flags.sort
+    openresty_force_recompile == false &&
+      node.automatic_attrs['openresty'] &&
+      node.automatic_attrs['openresty']['version'] == node['openresty']['source']['version'] &&
+      node.automatic_attrs['openresty']['_arguments'].sort == configure_flags.sort
   end
 
   notifies :restart, "service[nginx]"
@@ -200,5 +200,5 @@ else
   end
 end
 
-node.run_state.delete('nginx_configure_flags')
-node.run_state.delete('nginx_force_recompile')
+node.run_state.delete('openresty_configure_flags')
+node.run_state.delete('openresty_force_recompile')
